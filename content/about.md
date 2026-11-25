@@ -2,7 +2,7 @@
 title: "about"
 ---
 
-Hi, I'm **Ghosu**. This blog is notes from an old HP laptop running Linux Mint and i3: ricing, fixing things, and whatever I'm learning this week.
+Hi, I'm **Ghosu**. This is my personal blog to write about anything and everything. I'm using Claude AI to learn more about using the terminal on my Linux laptop. I've been an avid Linux fan since I was in my 20s, but I never really tried to learn it in more detail until now. I love data, so I'm also learning more about data analysis. I'll be using this blog as my brain dump and writing about any little projects I try to build.
 
 ## The machine
 
