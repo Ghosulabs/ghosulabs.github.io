@@ -12,7 +12,7 @@ summaryLength = 30
   author = "Ghosu"
   user = "ghosu"            # the "ghosu" in ghosu@blog:~$
   host = "blog"             # the "blog" in ghosu@blog:~$
-  description = "Notes from an old HP laptop running Linux Mint and i3 — ricing, fixing things, and whatever I'm learning this week."
+  description = "Linux fan, data nerd, terminal learner. This is where I think out loud about whatever I'm building or figuring out."
   homePosts = 10            # how many posts the home page lists
 
 [taxonomies]
