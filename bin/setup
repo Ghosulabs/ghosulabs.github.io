@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# One-time setup. Run it once from kitty:
+#   bash ~/Documents/"The Nexus"/Blog/bin/setup
+# Safe to run again: each step skips itself if it's already done.
+set -euo pipefail
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/_lib.sh"
+cd "$BLOG"
+
+# ---------------------------------------------------------------- 1. Hugo
+say "1/6 Hugo"
+if ! command -v hugo >/dev/null 2>&1; then
+  say "Installing Hugo (asks for your password)..."
+  sudo apt update -qq && sudo apt install -y hugo
+fi
+# the GitHub build file travels in bin/ and is moved into place here
+mkdir -p .github/workflows
+if [ -f bin/github-build.yml ]; then mv -f bin/github-build.yml .github/workflows/hugo.yml; fi
+[ -f .github/workflows/hugo.yml ] || die "Missing the GitHub build file (bin/github-build.yml)."
+ver="$(hugo version | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1)"; ver="${ver#v}"
+[ -n "$ver" ] || die "Couldn't read the Hugo version."
+# GitHub builds with exactly the same Hugo as this laptop, so preview = live site.
+sed -i -E "s/^(\s*HUGO_VERSION:).*/\1 ${ver}/" .github/workflows/hugo.yml
+ok "hugo $ver (GitHub will use the same version)"
+
+# ---------------------------------------------------------------- 2. commands
+say "2/6 Commands: newpost, preview, publish, sync"
+chmod +x bin/newpost bin/preview bin/publish bin/sync bin/setup
+mkdir -p "$HOME/.local/bin"
+for c in newpost preview publish; do ln -sfn "$BLOG/bin/$c" "$HOME/.local/bin/$c"; done
+# "sync" is also a system command (it flushes disks, and other programs use it),
+# so the blog's sync is an alias: only you typing it in a terminal gets the blog one.
+for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+  [ -f "$rc" ] || continue
+  if ! grep -q '# >>> ghosu blog >>>' "$rc"; then
+    {
+      printf '\n# >>> ghosu blog >>>\n'
+      printf 'alias sync=%q\n' "$BLOG/bin/sync"
+      printf '# <<< ghosu blog <<<\n'
+    } >> "$rc"
+  fi
+done
+case ":$PATH:" in
+  *":$HOME/.local/bin:"*) ok "Commands installed" ;;
+  *) ok "Commands installed. Open a new kitty window (or log out and back in) to use them." ;;
+esac
+
+# ---------------------------------------------------------------- 3. git
+say "3/6 Git"
+need gh "Install it first (you already did on this laptop)."
+# a real call to GitHub, not just "gh auth status" (which also fails on unrelated stale logins)
+login="$(gh api user --jq .login 2>/tmp/blog-gh.log || true)"
+if [ -z "$login" ]; then
+  cat /tmp/blog-gh.log >&2; echo >&2; gh auth status >&2 || true
+  die "gh can't reach your GitHub account. Run: gh auth login   (GitHub.com, HTTPS, log in with a web browser), then run setup again."
+fi
+[ "${login,,}" = "${OWNER,,}" ] || warn "gh is logged in as $login, not $OWNER. Switch with: gh auth switch"
+ok "gh logged in as $login"
+gh auth setup-git >/dev/null 2>&1 || true
+[ -d .git ] || git init -q -b main
+git add -A
+if ! git diff --cached --quiet; then git commit -q -m "Set up the blog"; fi
+ok "Local repo ready ($(git rev-list --count HEAD) commits)"
+
+# ---------------------------------------------------------------- 4. repo
+say "4/6 GitHub repo $OWNER/$REPO"
+if gh repo view "$OWNER/$REPO" >/dev/null 2>&1; then
+  ok "Already exists"
+else
+  gh repo create "$OWNER/$REPO" --public --description "ghosu@blog: my Hugo blog" >/dev/null
+  ok "Created https://github.com/$OWNER/$REPO"
+fi
+url="https://github.com/$OWNER/$REPO.git"
+if git remote get-url origin >/dev/null 2>&1; then git remote set-url origin "$url"; else git remote add origin "$url"; fi
+
+# ---------------------------------------------------------------- 5. Pages
+say "5/6 GitHub Pages (built by GitHub Actions)"
+enable_pages() {
+  gh api -X POST "repos/$OWNER/$REPO/pages" -f build_type=workflow >/dev/null 2>&1 ||
+  gh api -X PUT  "repos/$OWNER/$REPO/pages" -f build_type=workflow >/dev/null 2>&1
+}
+pages_ok=no
+if enable_pages; then pages_ok=yes; ok "Pages turned on"; fi
+
+# ---------------------------------------------------------------- 6. push
+say "6/6 First publish"
+if ! git push -q -u origin main 2>/tmp/blog-push.log; then
+  cat /tmp/blog-push.log
+  die "GitHub refused the push. If the repo already had files in it, tell Claude and we'll merge them."
+fi
+ok "Pushed"
+if [ "$pages_ok" = no ]; then
+  sleep 3
+  if enable_pages; then
+    ok "Pages turned on"
+    gh workflow run hugo.yml -R "$OWNER/$REPO" >/dev/null 2>&1 || true
+    sleep 5
+  else
+    warn "Couldn't turn Pages on automatically. On github.com: repo Settings > Pages > Source: GitHub Actions."
+  fi
+fi
+watch_deploy "$(git rev-parse HEAD)" || true
+
+cat <<EOF
+
+$(printf '\033[1;35m')Done.$(printf '\033[0m') Your blog: $SITE
+
+  newpost "Title"    new post, opens in micro   (-o opens Obsidian instead)
+  preview            see it at localhost:1313 before publishing
+  publish            put your changes online
+  sync               pull down posts written on the web
+
+Open a new kitty window first so the commands are found.
+EOF

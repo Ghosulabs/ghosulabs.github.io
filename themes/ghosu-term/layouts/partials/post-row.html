@@ -1,0 +1,6 @@
+{{- $desc := .Description | default (.Summary | plainify | htmlUnescape | truncate 140) -}}
+<a class="row" href="{{ .RelPermalink }}">
+  <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
+  <span class="row-title">{{ .Title }}{{ if .Draft }} <span class="badge">draft</span>{{ end }}</span>
+  {{ with $desc }}<span class="row-desc">{{ . }}</span>{{ end }}
+</a>

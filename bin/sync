@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# sync    pull down anything posted or edited on the web (Pages CMS / github.com)
+set -euo pipefail
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/_lib.sh"
+cd "$BLOG"
+[ -d .git ] || die "The blog isn't set up yet. Run: bash \"$BLOG/bin/setup\""
+
+before="$(git rev-parse HEAD)"
+say "Getting changes from GitHub..."
+git pull --rebase --autostash --quiet || die "Your changes and the web changes clash. Run 'git status' in $BLOG to see where."
+if [ "$before" = "$(git rev-parse HEAD)" ]; then
+  ok "Already up to date."
+else
+  ok "Pulled:"
+  git log --format='     %C(magenta)%h%Creset %s %C(dim)(%cr)%Creset' "$before..HEAD"
+fi

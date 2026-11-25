@@ -1,0 +1,60 @@
+# Pages CMS (https://app.pagescms.org): write and edit posts from any browser.
+# Every save is a commit to main, so the site rebuilds on its own.
+# Back on the laptop, run `sync` to pull those posts down into Obsidian.
+
+media:
+  input: content/posts/images
+  output: /posts/images
+
+content:
+  - name: posts
+    label: Posts
+    type: collection
+    path: content/posts
+    filename: "{primary}.md"
+    exclude: [_index.md]
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+      - name: date
+        label: Date
+        type: date
+        options:
+          time: true
+          format: "yyyy-MM-dd'T'HH:mm:ss"
+      - name: author
+        label: Author
+        type: string
+        default: Ghosu
+      - name: description
+        label: One-line description (shows in the post list)
+        type: text
+      - name: tags
+        label: Tags
+        type: string
+        list: true
+      - name: draft
+        label: Draft (hidden from the site)
+        type: boolean
+        default: false
+      - name: body
+        label: Post
+        type: rich-text
+        options:
+          format: markdown
+
+  - name: about
+    label: About page
+    type: file
+    path: content/about.md
+    fields:
+      - name: title
+        label: Title
+        type: string
+      - name: body
+        label: Text
+        type: rich-text
+        options:
+          format: markdown

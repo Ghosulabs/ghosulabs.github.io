@@ -1,0 +1,17 @@
+{{ define "main" }}
+{{- $posts := (where site.RegularPages "Section" "posts").ByDate.Reverse -}}
+{{- $n := site.Params.homePosts | default 10 -}}
+<section class="block">
+  <p class="cmd"><span class="ps">$</span> whoami</p>
+  <h1 class="title">{{ site.Params.author }}</h1>
+  <p class="lead">{{ site.Params.description }}</p>
+</section>
+
+<section class="block">
+  <p class="cmd"><span class="ps">$</span> ls -lt posts/{{ if gt (len $posts) $n }} | head -{{ $n }}{{ end }}</p>
+  <p class="dim small">total {{ len $posts }}</p>
+  {{ range first $n $posts }}{{ partial "post-row.html" . }}{{ end }}
+  {{ if gt (len $posts) $n }}<p class="small"><a href="{{ "/posts/" | relURL }}">… all {{ len $posts }} posts → ls -lt posts/</a></p>{{ end }}
+  {{ if not $posts }}<p class="dim">posts/ is empty. Run <code>newpost "My first post"</code> to fix that.</p>{{ end }}
+</section>
+{{ end }}

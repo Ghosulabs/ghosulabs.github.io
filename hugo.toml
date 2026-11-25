@@ -1,0 +1,48 @@
+# ghosu@blog — Hugo config
+baseURL = "https://ghosulabs.github.io/"
+languageCode = "en-us"
+title = "ghosu@blog"
+theme = "ghosu-term"
+timeZone = "America/New_York"
+buildFuture = true        # a post dated "today" always shows, whatever the hour
+enableRobotsTXT = true
+summaryLength = 30
+
+[params]
+  author = "Ghosu"
+  user = "ghosu"            # the "ghosu" in ghosu@blog:~$
+  host = "blog"             # the "blog" in ghosu@blog:~$
+  description = "Notes from an old HP laptop running Linux Mint and i3 — ricing, fixing things, and whatever I'm learning this week."
+  homePosts = 10            # how many posts the home page lists
+
+[taxonomies]
+  tag = "tags"
+
+[permalinks]
+  posts = "/posts/:slug/"   # URL comes from the title (or "slug:" if you set one)
+
+[services.rss]
+  limit = 20
+
+[markup.goldmark.renderer]
+  unsafe = true             # allow raw HTML in posts (Pages CMS may write some)
+
+[markup.highlight]
+  style = "catppuccin-mocha"
+  codeFences = true
+  guessSyntax = false
+  tabWidth = 4
+
+# Images live in content/posts/images/ (next to the posts, so Obsidian can
+# preview them) and are served at /posts/images/.
+[module]
+  [[module.mounts]]
+    source = "content"
+    target = "content"
+    excludeFiles = "posts/images/**"
+  [[module.mounts]]
+    source = "content/posts/images"
+    target = "static/posts/images"
+  [[module.mounts]]
+    source = "static"
+    target = "static"

@@ -1,0 +1,17 @@
+{{- /*
+  Post body, plus support for Obsidian-style links so posts written in
+  Obsidian look right on the site:
+    ![[Pasted image.png]]  ->  image from content/posts/images/
+    [[Some note|text]]     ->  plain "text" (vault notes aren't on the site)
+  Code is set aside first, so `[[ -f x ]]` in bash or `[[module.mounts]]`
+  in TOML stays exactly as written.
+*/ -}}
+{{- $c := string .Content -}}
+{{- if strings.Contains $c "[[" -}}
+  {{- $code := findRE `(?s)<pre.*?</pre>|<code.*?</code>` $c -}}
+  {{- range $i, $b := $code }}{{ $c = replace $c $b (printf "@@CODE%d@@" $i) }}{{ end -}}
+  {{- $c = replaceRE `!\[\[([^\]|\s][^\]|]*?)(?:\|[^\]]*)?\]\]` `<img src="/posts/images/$1" alt="" loading="lazy">` $c -}}
+  {{- $c = replaceRE `\[\[(?:[^\]|\s][^\]|]*\|)?([^\]|\s][^\]|]*)\]\]` `$1` $c -}}
+  {{- range $i, $b := $code }}{{ $c = replace $c (printf "@@CODE%d@@" $i) $b }}{{ end -}}
+{{- end -}}
+{{- $c | safeHTML -}}

@@ -1,0 +1,19 @@
+{{ define "main" }}
+{{- $dir := strings.TrimPrefix "/" .RelPermalink -}}
+<section class="block">
+{{ if eq .Kind "taxonomy" }}
+  <p class="cmd"><span class="ps">$</span> ls {{ $dir }}</p>
+  <p class="dim small">total {{ len .Data.Terms }}</p>
+  <ul class="taglist">
+    {{ range .Data.Terms.ByCount }}
+    <li><a href="{{ .Page.RelPermalink }}">#{{ .Page.LinkTitle }}</a> <span class="dim">({{ .Count }})</span></li>
+    {{ end }}
+  </ul>
+{{ else }}
+  <p class="cmd"><span class="ps">$</span> ls -lt {{ $dir }}</p>
+  {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
+  <p class="dim small">total {{ len .Pages }}</p>
+  {{ range .Pages.ByDate.Reverse }}{{ partial "post-row.html" . }}{{ end }}
+{{ end }}
+</section>
+{{ end }}

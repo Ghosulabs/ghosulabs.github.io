@@ -1,0 +1,7 @@
+{{ define "main" }}
+<section class="block">
+  <p class="cmd"><span class="ps">$</span> cat this-page.md</p>
+  <p class="err">cat: this-page.md: No such file or directory</p>
+  <p>That page doesn't exist (or it moved). <a href="{{ "/" | relURL }}">cd ~</a> or browse <a href="{{ "/posts/" | relURL }}">ls -lt posts/</a>.</p>
+</section>
+{{ end }}

@@ -1,0 +1,6 @@
+{{- /* Relative image paths (what Obsidian writes) point at content/posts/images/. */ -}}
+{{- $src := .Destination -}}
+{{- if not (or (hasPrefix $src "/") (strings.Contains $src "://") (hasPrefix $src "data:")) -}}
+  {{- $src = printf "/posts/images/%s" (path.Base $src) -}}
+{{- end -}}
+<img src="{{ $src | relURL }}" alt="{{ .PlainText }}"{{ with .Title }} title="{{ . }}"{{ end }} loading="lazy">

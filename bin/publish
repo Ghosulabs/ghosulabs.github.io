@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# publish            test-build the site, then send every change to GitHub
+# publish "message"  same, with your own commit message
+set -euo pipefail
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/_lib.sh"
+cd "$BLOG"
+[ -d .git ] || die "The blog isn't set up yet. Run: bash \"$BLOG/bin/setup\""
+
+# 1. get anything posted from the web first, so nothing gets overwritten
+say "Getting changes from GitHub..."
+git pull --rebase --autostash --quiet || die "Your changes and the web changes clash. Run 'git status' in $BLOG to see where."
+
+# 2. make sure the site still builds before anything goes out
+if command -v hugo >/dev/null 2>&1; then
+  say "Test build..."
+  tmp="$(mktemp -d)"
+  if ! hugo --quiet --destination "$tmp" >"$tmp.log" 2>&1; then
+    cat "$tmp.log"; rm -rf "$tmp" "$tmp.log"
+    die "The site didn't build, so nothing was published. Fix the error above and try again."
+  fi
+  rm -rf "$tmp" "$tmp.log"
+fi
+
+# 3. commit
+git add -A
+if git diff --cached --quiet; then
+  if [ "$(git rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)" = "0" ]; then
+    ok "Nothing new to publish."; exit 0
+  fi
+else
+  msg="${*:-}"
+  if [ -z "$msg" ]; then
+    posts="$(git diff --cached --name-only --diff-filter=AM -- content/posts \
+             | grep '\.md$' | grep -v '_index\.md$' | sed 's#.*/##; s/\.md$//' | paste -sd ',' - | sed 's/,/, /g' || true)"
+    msg="${posts:+post: $posts}"; msg="${msg:-update blog}"
+  fi
+  git commit --quiet -m "$msg"
+  ok "Committed: $msg"
+fi
+
+# 4. push and follow the build
+say "Pushing..."
+git push --quiet
+watch_deploy "$(git rev-parse HEAD)"

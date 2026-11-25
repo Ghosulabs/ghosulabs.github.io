@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# newpost "My post title"      create a post and open it in micro
+# newpost -o "My post title"   ...and open it in Obsidian instead
+# newpost -n "My post title"   just create it
+set -euo pipefail
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/_lib.sh"
+
+open_with="micro"
+words=()
+for arg in "$@"; do
+  case "$arg" in
+    -o|--obsidian) open_with="obsidian" ;;
+    -n|--no-open)  open_with="none" ;;
+    -h|--help)     sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *)             words+=("$arg") ;;
+  esac
+done
+
+title="${words[*]:-}"
+if [ -z "$title" ]; then read -rp "Title: " title; fi
+[ -n "$title" ] || die "A post needs a title."
+
+# file name: "Hello, World!" -> hello-world.md
+slug="$(printf '%s' "$title" | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null)" || slug="$title"
+slug="$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+[ -n "$slug" ] || slug="post-$(date +%Y%m%d-%H%M)"
+
+file="$BLOG/content/posts/$slug.md"
+[ -e "$file" ] && die "There's already a post called $slug.md"
+
+esc_title="${title//\\/\\\\}"; esc_title="${esc_title//\"/\\\"}"
+cat > "$file" <<EOF
+---
+title: "$esc_title"
+date: $(date +%Y-%m-%dT%H:%M:%S)
+author: Ghosu
+description: ""
+tags: []
+draft: false
+---
+
+EOF
+ok "Created content/posts/$slug.md"
+
+case "$open_with" in
+  micro)
+    if command -v micro >/dev/null 2>&1; then exec micro "$file"; else exec "${EDITOR:-nano}" "$file"; fi ;;
+  obsidian)
+    uri="obsidian://open?path=$(python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]))' "$file")"
+    xdg-open "$uri" >/dev/null 2>&1 & ;;
+  none) ;;
+esac

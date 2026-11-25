@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# preview    run the blog on http://localhost:1313 (drafts included), live-reloading
+#            as you save. Ctrl+C to stop.
+set -euo pipefail
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/_lib.sh"
+need hugo "Install it with: sudo apt install hugo"
+cd "$BLOG"
+
+port=1313
+( sleep 2; xdg-open "http://localhost:$port/" >/dev/null 2>&1 ) &
+say "Preview at http://localhost:$port/ (drafts show with a DRAFT badge). Ctrl+C to stop."
+exec hugo server --buildDrafts --bind 127.0.0.1 --port "$port" --disableFastRender

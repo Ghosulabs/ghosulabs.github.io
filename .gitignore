@@ -1,0 +1,8 @@
+# Hugo build output (GitHub builds the real site)
+/public/
+/resources/_gen/
+.hugo_build.lock
+
+# editor / OS leftovers
+*~
+.DS_Store

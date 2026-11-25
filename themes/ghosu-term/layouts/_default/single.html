@@ -1,0 +1,34 @@
+{{ define "main" }}
+{{- $isPost := eq .Section "posts" -}}
+<p class="cmd"><span class="ps">$</span> cat {{ path.Base .RelPermalink }}.md</p>
+
+<article class="post">
+  <header class="post-head">
+    <h1 class="title">{{ .Title }}</h1>
+    {{ if $isPost }}
+    <p class="meta">date: <time datetime="{{ .Date.Format "2006-01-02T15:04:05-07:00" }}">{{ .Date.Format "2006-01-02" }}</time> · author: {{ .Params.author | default site.Params.author }} · {{ .ReadingTime }} min read{{ if .Draft }} · <span class="badge">draft</span>{{ end }}</p>
+    {{ with .GetTerms "tags" }}<p class="meta">tags: {{ range . }}<a href="{{ .RelPermalink }}">#{{ .LinkTitle }}</a> {{ end }}</p>{{ end }}
+    {{ end }}
+  </header>
+  <div class="prose">
+    {{ partial "content.html" . }}
+  </div>
+</article>
+
+{{ if $isPost }}
+{{- /* older / newer post, worked out by date */ -}}
+{{- $list := (where site.RegularPages "Section" "posts").ByDate.Reverse -}}
+{{- $older := false -}}{{- $newer := false -}}
+{{- range $i, $p := $list -}}
+  {{- if eq $p.RelPermalink $.RelPermalink -}}
+    {{- if gt $i 0 }}{{ $newer = index $list (sub $i 1) }}{{ end -}}
+    {{- if lt (add $i 1) (len $list) }}{{ $older = index $list (add $i 1) }}{{ end -}}
+  {{- end -}}
+{{- end }}
+<nav class="pager" aria-label="More posts">
+  <a href="{{ "/posts/" | relURL }}">← cd ..</a>
+  {{ with $older }}<a href="{{ .RelPermalink }}">prev: {{ .Title }}</a>{{ end }}
+  {{ with $newer }}<a href="{{ .RelPermalink }}">next: {{ .Title }} →</a>{{ end }}
+</nav>
+{{ end }}
+{{ end }}
